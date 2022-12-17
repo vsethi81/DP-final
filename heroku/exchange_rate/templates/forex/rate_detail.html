@@ -1,0 +1,296 @@
+{% extends 'forex/base.html'%}
+{% load static %}
+{% block content %}
+
+<style>
+
+
+  #customers {
+    font-family: Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  td,
+  th {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+
+  #customers tr:nth-child(even) {
+    background-color: #808080;
+  }
+
+  #customers tr:hover {
+    background-color: #ddd;
+  }
+
+  #customers th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #04AA6D;
+    color: white;
+  }
+
+  .one {
+    grid-column: 1 / 3;
+    grid-row: 1;
+  }
+
+  .two {
+    grid-column: 2 / 4;
+    grid-row: 1 / 3;
+  }
+</style>
+
+
+<div class="container">
+  <br><br>
+  <div class="row">
+    <div class="col-md-5">
+      <br>
+      <!-- <img class="img-fluid" src="{{ forex.image_url }}" alt="" style = "width: 90%;"> -->
+      <br><br>
+
+      <h3 class="card-title text-center ">Date : {{ date }}</h3>
+
+      <canvas id="chart" width="8000" height="400" class="one"></canvas>
+
+      <canvas id="chart2" width="400" height="400" class="two"></canvas>
+
+      <meta id="rates" data-rates="{{ rates }}">
+      <meta id="date" data-rates="{{ date }}">
+      <meta id="max" data-rates="{{ max }}">
+      <meta id="min" data-rates="{{ min }}">
+      <meta id="top_5" data-rates="{{ top_5 }}">
+      <meta id="bottom_5" data-rates="{{ bottom_5 }}">
+
+      <script type="text/javascript">
+
+        var djangoData = $('#rates').data();
+        var rates = djangoData.rates;
+        rates = rates.replaceAll('\'', '"');
+        djangoData.rates = JSON.parse(rates);
+        var ratesLabel = Object.keys(djangoData.rates);
+
+        var ratesArray = [];
+        Object.keys(djangoData.rates).forEach(function (key) {
+          var value = djangoData.rates[key];
+          ratesArray.push([key, value]);
+        });
+
+        var top5 = $('#top_5').data();
+        rates = top5.rates;
+        rates = rates.replaceAll('\'', '"');
+        top5.rates = JSON.parse(rates);
+        var top5Labels = Object.keys(top5.rates);
+
+        var top5Array = [];
+        Object.keys(top5.rates).forEach(function (key) {
+          var value = top5.rates[key];
+          top5Array.push([key, value]);
+        });
+
+
+        var bottom5 = $('#bottom_5').data();
+        rates = bottom5.rates;
+        rates = rates.replaceAll('\'', '"');
+        bottom5.rates = JSON.parse(rates);
+        var bottom5Label = Object.keys(bottom5.rates);
+
+        var bottom5Array = [];
+        Object.keys(bottom5.rates).forEach(function (key) {
+          var value = bottom5.rates[key];
+          bottom5Array.push([key, value]);
+        });
+
+
+        const ctx = document.getElementById('chart').getContext('2d');
+
+        const ctx2 = document.getElementById('chart2').getContext('2d');
+
+        var max = '{{max}}';
+        var date = '{{date}}';
+        var min = '{{min}}';
+
+        function getRandomColor() {
+          var letters = '0123456789ABCDEF'.split('');
+          var color = '#';
+          for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+          }
+          return color;
+        }
+
+        var ratesColor = [];
+        for (var i = 0; i < top5Labels.length; i++) {
+          ratesColor.push(getRandomColor());
+        }
+
+        var top5Color = [];
+        for (var i = 0; i < top5Labels.length; i++) {
+          top5Color.push(getRandomColor());
+        }
+
+        console.log(bottom5Label);
+        console.log(Object.values(bottom5.rates));
+        const myChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: bottom5Label,
+            datasets: [{
+              label: 'Lowest Currency Values Against EURO',
+              data: Object.values(bottom5.rates),
+              backgroundColor: ratesColor,
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+
+
+
+        const myChart2 = new Chart(ctx2, {  
+          type: 'bar',
+          data: {
+            labels: Object.keys(top5.rates),
+            datasets: [{
+              label: 'Highest Currency Value Against EURO',
+              data: Object.values(top5.rates),
+              backgroundColor: top5Color,
+              borderWidth: 1
+              
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+
+        
+
+        
+        function table() {
+          var html = '<table><thead><tr><th>Currency Code</th><th>Value</th></tr><</thead><tbody>';
+          for (var i = 0, len = ratesArray.length; i < len; ++i) {
+            html += '<tr>';
+            for (var j = 0, rowLen = ratesArray[i].length; j < rowLen; ++j) {
+              html += '<td>' + ratesArray[i][j] + '</td>';
+            }
+            html += "</tr>";
+          }
+          html += '</tbody><tfoot><tr>....</tr></tfoot></table>';
+          $(html).appendTo('#div1');
+          console.log(html)
+        }
+
+
+        table();
+
+
+        
+        // create table cells containing images
+        function populateRates(rates) {
+          const rateRowEl = document.getElementById('rates');
+
+          rates.forEach(rateObj => {
+            let rate1 = rateObj['0'];
+            const tdEl = document.createElement('td');
+            tdEl.appendChild(rate1);
+            rateRowEl.appendChild(tdEl);
+          });
+        }
+
+                // execute
+        populateRates(ratesArray);
+
+      </script>
+      <br><br><br>
+
+      <div id='div1'> </div>
+
+
+      <!-- <table>
+        <tr >
+          <th class="th">Country</th>
+          <th class="th">Currency</th>
+          <th class="th">Currency Value</th>
+        </tr>
+        <tr>
+          <td>Kuwait </td>
+          <td>KWD</td>
+          <td>260</td>
+        </tr>
+        <tr>
+          <td>Bahrain</td>
+          <td>BHD</td>
+          <td>212.64</td>
+        </tr>
+        <tr>
+          <td>Omar</td>
+          <td>OMR</td>
+          <td>208.18</td>
+        </tr>
+        <tr>
+          <td>Jordan</td>
+          <td>JOD</td>
+          <td>112.87</td>
+        </tr>
+        <tr>
+          <td>Cayman Islands</td>
+          <td>KYD</td>
+          <td>96.19</td>
+        </tr>
+        <tr>
+          <td>Gibraltar</td>
+          <td>GIP</td>
+          <td>94.64</td>
+        </tr>
+        <tr>
+          <td>Great Britain</td>
+          <td>GBP</td>
+          <td>94.36</td>
+        </tr>
+        <tr>
+          <td>Switzerland</td>
+          <td>CHF</td>
+          <td>81.21</td>
+        </tr>
+        <tr>
+          <td> United States of America</td>
+          <td>USD</td>
+          <td>80.12</td>
+        </tr>
+        <tr>
+          <td>Eurozone</td>
+          <td>EUR</td>
+          <td>79.82</td>
+        </tr>
+      </table> -->
+
+      <table>
+        <thead>
+          <tr>
+            <th>Currency Code</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr id="rates"></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% endblock %}
